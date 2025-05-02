@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Management App</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.9/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const App = () => {
+      const [tasks, setTasks] = useState([]);
+      const [newTask, setNewTask] = useState('');
+
+      // Fetch tasks on mount
+      useEffect(() => {
+        fetch('http://localhost:5000/api/tasks')
+          .then(res => res.json())
+          .then(data => setTasks(data));
+      }, []);
+
+      // Add a new task
+      const addTask = () => {
+        if (!newTask) return;
+        fetch('http://localhost:5000/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: newTask }),
+        })
+          .then(res => res.json())
+          .then(task => {
+            setTasks([...tasks, task]);
+            setNewTask('');
+          });
+      };
+
+      // Delete a task
+      const deleteTask = (id) => {
+        fetch(`http://localhost:5000/api/tasks/${id}`, { method: 'DELETE' })
+          .then(() => setTasks(tasks.filter(task => task.id !== id)));
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
+          <h1 className="text-3xl font-bold mb-6">Task Management App</h1>
+          <div className="flex mb-4">
+            <input
+              type="text"
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              className="border rounded px-4 py-2 mr-2"
+              placeholder="Add a new task"
+            />
+            <button
+              onClick={addTask}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Add Task
+            </button>
+          </div>
+          <ul className="w-full max-w-md">
+            {tasks.map(task => (
+              <li
+                key={task.id}
+                className="flex justify-between items-center bg-white p-4 mb-2 rounded shadow"
+              >
+                <span>{task.title}</span>
+                <button
+                  onClick={() => deleteTask(task.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
